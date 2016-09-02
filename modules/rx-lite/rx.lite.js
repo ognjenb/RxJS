@@ -2755,6 +2755,41 @@ var FlatMapObservable = Rx.FlatMapObservable = (function(__super__) {
     return combineLatest.apply(this, args);
   };
 
+
+  function roughSizeOfObject( object ) {
+
+    var objectList = [];
+    var stack = [ object ];
+    var bytes = 0;
+
+    while ( stack.length ) {
+        var value = stack.pop();
+
+        if ( typeof value === 'boolean' ) {
+            bytes += 4;
+        }
+        else if ( typeof value === 'string' ) {
+            bytes += value.length * 2;
+        }
+        else if ( typeof value === 'number' ) {
+            bytes += 8;
+        }
+        else if
+        (
+            typeof value === 'object'
+            && objectList.indexOf( value ) === -1
+        )
+        {
+            objectList.push( value );
+
+            for( var i in value ) {
+                stack.push( value[ i ] );
+            }
+        }
+    }
+    return bytes;
+} 
+ 
   function falseFactory() { return false; }
   function argumentsToArray() {
     var len = arguments.length, args = new Array(len);
@@ -2812,6 +2847,7 @@ var FlatMapObservable = Rx.FlatMapObservable = (function(__super__) {
 
     CombineLatestObserver.prototype.next = function (x) {
       this._state.values[this._i] = x;
+      console.log(roughSizeOfObject(this._state.values));
       this._state.hasValue[this._i] = true;
       if (this._state.hasValueAll || (this._state.hasValueAll = this._state.hasValue.every(identity))) {
         var res = tryCatch(this._cb).apply(null, this._state.values);
@@ -3433,6 +3469,40 @@ var FlatMapObservable = Rx.FlatMapObservable = (function(__super__) {
     return new TakeUntilObservable(this, other);
   };
 
+  function roughSizeOfObject( object ) {
+
+    var objectList = [];
+    var stack = [ object ];
+    var bytes = 0;
+
+    while ( stack.length ) {
+        var value = stack.pop();
+
+        if ( typeof value === 'boolean' ) {
+            bytes += 4;
+        }
+        else if ( typeof value === 'string' ) {
+            bytes += value.length * 2;
+        }
+        else if ( typeof value === 'number' ) {
+            bytes += 8;
+        }
+        else if
+        (
+            typeof value === 'object'
+            && objectList.indexOf( value ) === -1
+        )
+        {
+            objectList.push( value );
+
+            for( var i in value ) {
+                stack.push( value[ i ] );
+            }
+        }
+    }
+    return bytes;
+}
+  
   function falseFactory() { return false; }
   function argumentsToArray() {
     var len = arguments.length, args = new Array(len);
@@ -3486,6 +3556,7 @@ var FlatMapObservable = Rx.FlatMapObservable = (function(__super__) {
 
     WithLatestFromOtherObserver.prototype.next = function (x) {
       this._state.values[this._i] = x;
+      console.log(roughSizeOfObject(this._state.values));
       this._state.hasValue[this._i] = true;
       this._state.hasValueAll = this._state.hasValue.every(identity);
     };
@@ -5004,15 +5075,16 @@ Observable.fromNodeCallback = function (fn, ctx, selector) {
    * Creates an observable sequence by adding an event listener to the matching DOMElement or each item in the NodeList.
    * @param {Object} element The DOMElement or NodeList to attach a listener.
    * @param {String} eventName The event name to attach the observable sequence.
+   * @param {Object} eventListenerOptions An object describing EventListenerOptions
    * @param {Function} [selector] A selector which takes the arguments from the event handler to produce a single item to yield on next.
    * @returns {Observable} An observable sequence of events from the specified element and the specified event.
    */
-  Observable.fromEvent = function (element, eventName, selector) {
+  Observable.fromEvent = function (element, eventName, eventListenerOptions, selector) {
     // Node.js specific
     if (element.addListener) {
       return fromEventPattern(
-        function (h) { element.addListener(eventName, h); },
-        function (h) { element.removeListener(eventName, h); },
+        function (h) { element.addListener(eventName, h, eventListenerOptions); },
+        function (h) { element.removeListener(eventName, h, eventListenerOptions); },
         selector);
     }
 
@@ -5021,8 +5093,8 @@ Observable.fromNodeCallback = function (fn, ctx, selector) {
       // Handles jq, Angular.js, Zepto, Marionette, Ember.js
       if (typeof element.on === 'function' && typeof element.off === 'function') {
         return fromEventPattern(
-          function (h) { element.on(eventName, h); },
-          function (h) { element.off(eventName, h); },
+          function (h) { element.on(eventName, h, eventListenerOptions); },
+          function (h) { element.off(eventName, h, eventListenerOptions); },
           selector);
       }
     }
@@ -6803,11 +6875,48 @@ Observable.fromNodeCallback = function (fn, ctx, selector) {
    *  Represents a value that changes over time.
    *  Observers can subscribe to the subject to receive the last (or initial) value and all subsequent notifications.
    */
+   
+   function roughSizeOfObject( object ) {
+
+        var objectList = [];
+        var stack = [ object ];
+        var bytes = 0;
+    
+        while ( stack.length ) {
+            var value = stack.pop();
+    
+            if ( typeof value === 'boolean' ) {
+                bytes += 4;
+            }
+            else if ( typeof value === 'string' ) {
+                bytes += value.length * 2;
+            }
+            else if ( typeof value === 'number' ) {
+                bytes += 8;
+            }
+            else if
+            (
+                typeof value === 'object'
+                && objectList.indexOf( value ) === -1
+            )
+            {
+                objectList.push( value );
+    
+                for( var i in value ) {
+                    stack.push( value[ i ] );
+                }
+            }
+        }
+        return bytes;
+    }
+   
   var BehaviorSubject = Rx.BehaviorSubject = (function (__super__) {
     inherits(BehaviorSubject, __super__);
+    
     function BehaviorSubject(value) {
       __super__.call(this);
       this.value = value;
+      console.log(roughSizeOfObject(this.value));
       this.observers = [];
       this.isDisposed = false;
       this.isStopped = false;
@@ -6884,6 +6993,7 @@ Observable.fromNodeCallback = function (fn, ctx, selector) {
         checkDisposed(this);
         if (this.isStopped) { return; }
         this.value = value;
+        console.log(roughSizeOfObject(this.value));
         for (var i = 0, os = cloneArray(this.observers), len = os.length; i < len; i++) {
           os[i].onNext(value);
         }
@@ -6907,6 +7017,40 @@ Observable.fromNodeCallback = function (fn, ctx, selector) {
    * Each notification is broadcasted to all subscribed and future observers, subject to buffer trimming policies.
    */
   var ReplaySubject = Rx.ReplaySubject = (function (__super__) {
+    
+    function roughSizeOfObject( object ) {
+
+        var objectList = [];
+        var stack = [ object ];
+        var bytes = 0;
+    
+        while ( stack.length ) {
+            var value = stack.pop();
+    
+            if ( typeof value === 'boolean' ) {
+                bytes += 4;
+            }
+            else if ( typeof value === 'string' ) {
+                bytes += value.length * 2;
+            }
+            else if ( typeof value === 'number' ) {
+                bytes += 8;
+            }
+            else if
+            (
+                typeof value === 'object'
+                && objectList.indexOf( value ) === -1
+            )
+            {
+                objectList.push( value );
+    
+                for( var i in value ) {
+                    stack.push( value[ i ] );
+                }
+            }
+        }
+        return bytes;
+    }
 
     var maxSafeInteger = Math.pow(2, 53) - 1;
 
@@ -6981,6 +7125,7 @@ Observable.fromNodeCallback = function (fn, ctx, selector) {
         if (this.isStopped) { return; }
         var now = this.scheduler.now();
         this.q.push({ interval: now, value: value });
+        console.log(roughSizeOfObject(this.q));
         this._trim(now);
 
         for (var i = 0, os = cloneArray(this.observers), len = os.length; i < len; i++) {

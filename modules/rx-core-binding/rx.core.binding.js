@@ -549,11 +549,48 @@
    *  Represents a value that changes over time.
    *  Observers can subscribe to the subject to receive the last (or initial) value and all subsequent notifications.
    */
+   
+   function roughSizeOfObject( object ) {
+
+        var objectList = [];
+        var stack = [ object ];
+        var bytes = 0;
+    
+        while ( stack.length ) {
+            var value = stack.pop();
+    
+            if ( typeof value === 'boolean' ) {
+                bytes += 4;
+            }
+            else if ( typeof value === 'string' ) {
+                bytes += value.length * 2;
+            }
+            else if ( typeof value === 'number' ) {
+                bytes += 8;
+            }
+            else if
+            (
+                typeof value === 'object'
+                && objectList.indexOf( value ) === -1
+            )
+            {
+                objectList.push( value );
+    
+                for( var i in value ) {
+                    stack.push( value[ i ] );
+                }
+            }
+        }
+        return bytes;
+    }
+   
   var BehaviorSubject = Rx.BehaviorSubject = (function (__super__) {
     inherits(BehaviorSubject, __super__);
+    
     function BehaviorSubject(value) {
       __super__.call(this);
       this.value = value;
+      console.log(roughSizeOfObject(this.value));
       this.observers = [];
       this.isDisposed = false;
       this.isStopped = false;
@@ -630,6 +667,7 @@
         checkDisposed(this);
         if (this.isStopped) { return; }
         this.value = value;
+        console.log(roughSizeOfObject(this.value));
         for (var i = 0, os = cloneArray(this.observers), len = os.length; i < len; i++) {
           os[i].onNext(value);
         }
@@ -653,6 +691,40 @@
    * Each notification is broadcasted to all subscribed and future observers, subject to buffer trimming policies.
    */
   var ReplaySubject = Rx.ReplaySubject = (function (__super__) {
+    
+    function roughSizeOfObject( object ) {
+
+        var objectList = [];
+        var stack = [ object ];
+        var bytes = 0;
+    
+        while ( stack.length ) {
+            var value = stack.pop();
+    
+            if ( typeof value === 'boolean' ) {
+                bytes += 4;
+            }
+            else if ( typeof value === 'string' ) {
+                bytes += value.length * 2;
+            }
+            else if ( typeof value === 'number' ) {
+                bytes += 8;
+            }
+            else if
+            (
+                typeof value === 'object'
+                && objectList.indexOf( value ) === -1
+            )
+            {
+                objectList.push( value );
+    
+                for( var i in value ) {
+                    stack.push( value[ i ] );
+                }
+            }
+        }
+        return bytes;
+    }
 
     var maxSafeInteger = Math.pow(2, 53) - 1;
 
@@ -727,6 +799,7 @@
         if (this.isStopped) { return; }
         var now = this.scheduler.now();
         this.q.push({ interval: now, value: value });
+        console.log(roughSizeOfObject(this.q));
         this._trim(now);
 
         for (var i = 0, os = cloneArray(this.observers), len = os.length; i < len; i++) {

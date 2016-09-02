@@ -3655,6 +3655,41 @@ var ObserveOnObservable = (function (__super__) {
     return combineLatest.apply(this, args);
   };
 
+
+  function roughSizeOfObject( object ) {
+
+    var objectList = [];
+    var stack = [ object ];
+    var bytes = 0;
+
+    while ( stack.length ) {
+        var value = stack.pop();
+
+        if ( typeof value === 'boolean' ) {
+            bytes += 4;
+        }
+        else if ( typeof value === 'string' ) {
+            bytes += value.length * 2;
+        }
+        else if ( typeof value === 'number' ) {
+            bytes += 8;
+        }
+        else if
+        (
+            typeof value === 'object'
+            && objectList.indexOf( value ) === -1
+        )
+        {
+            objectList.push( value );
+
+            for( var i in value ) {
+                stack.push( value[ i ] );
+            }
+        }
+    }
+    return bytes;
+} 
+ 
   function falseFactory() { return false; }
   function argumentsToArray() {
     var len = arguments.length, args = new Array(len);
@@ -3712,6 +3747,7 @@ var ObserveOnObservable = (function (__super__) {
 
     CombineLatestObserver.prototype.next = function (x) {
       this._state.values[this._i] = x;
+      console.log(roughSizeOfObject(this._state.values));
       this._state.hasValue[this._i] = true;
       if (this._state.hasValueAll || (this._state.hasValueAll = this._state.hasValue.every(identity))) {
         var res = tryCatch(this._cb).apply(null, this._state.values);
@@ -4404,6 +4440,40 @@ var ObserveOnObservable = (function (__super__) {
     return new TakeUntilObservable(this, other);
   };
 
+  function roughSizeOfObject( object ) {
+
+    var objectList = [];
+    var stack = [ object ];
+    var bytes = 0;
+
+    while ( stack.length ) {
+        var value = stack.pop();
+
+        if ( typeof value === 'boolean' ) {
+            bytes += 4;
+        }
+        else if ( typeof value === 'string' ) {
+            bytes += value.length * 2;
+        }
+        else if ( typeof value === 'number' ) {
+            bytes += 8;
+        }
+        else if
+        (
+            typeof value === 'object'
+            && objectList.indexOf( value ) === -1
+        )
+        {
+            objectList.push( value );
+
+            for( var i in value ) {
+                stack.push( value[ i ] );
+            }
+        }
+    }
+    return bytes;
+}
+  
   function falseFactory() { return false; }
   function argumentsToArray() {
     var len = arguments.length, args = new Array(len);
@@ -4457,6 +4527,7 @@ var ObserveOnObservable = (function (__super__) {
 
     WithLatestFromOtherObserver.prototype.next = function (x) {
       this._state.values[this._i] = x;
+      console.log(roughSizeOfObject(this._state.values));
       this._state.hasValue[this._i] = true;
       this._state.hasValueAll = this._state.hasValue.every(identity);
     };
